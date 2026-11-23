@@ -751,18 +751,81 @@ function printReport(st,f,t,label){
     deliver(toPDF(pages.map(q=>q.c)),"تسميع - "+st.name+" - "+label);
   }catch(e){toast("تعذّر إنشاء الملف")}
 }
+/* ===== التقرير اليومي: تصميم ناعم وشبابي ===== */
+const DT="#167D8D",DM="#167D8D",DK="#071B2B",DS="#6b7f88",DL="#e3eeee";
+function dGrad(x,X,w){const g=x.createLinearGradient(X+w,0,X,0);g.addColorStop(0,"#071B2B");g.addColorStop(.55,"#0f3d52");g.addColorStop(1,"#167D8D");return g}
+function dCard(x,X,y,w,h,r,f){x.save();x.shadowColor="rgba(15,42,58,.10)";x.shadowBlur=16*KS;x.shadowOffsetY=5*KS;x.fillStyle=f||"#fff";rr(x,X,y,w,h,r);x.fill();x.restore()}
+function dHead(x){
+  x.fillStyle=dGrad(x,0,PWc);x.beginPath();x.moveTo(0,0);x.lineTo(PWc,0);x.lineTo(PWc,140);x.quadraticCurveTo(PWc/2,182,0,140);x.closePath();x.fill();
+  x.fillStyle="rgba(255,255,255,.10)";[[60,24,86],[PWc-30,128,64],[340,6,38]].forEach(([a,b,r])=>{x.beginPath();x.arc(a,b,r,0,7);x.fill()});
+  tx(x,"مسجد التوحيد",R,56,{s:30,w:700,c:"#fff"});
+  tx(x,"حلقة تحفيظ القرآن الكريم",R,90,{s:14,w:500,c:"rgba(255,255,255,.9)"});
+  x.fillStyle="rgba(255,255,255,.22)";rr(x,MX,42,214,28,14);x.fill();
+  tx(x,"صدر في "+fmtDate(isoToday(),true),MX+107,57,{s:11.5,w:600,c:"#fff",a:"center",m:198});
+}
+function dMini(x){
+  x.fillStyle=dGrad(x,0,PWc);x.fillRect(0,0,PWc,10);
+  tx(x,"مسجد التوحيد  ·  حلقة تحفيظ القرآن الكريم",R,36,{s:13,w:700,c:DT});
+}
+function dFoot(x,n,total){
+  x.fillStyle=DL;rr(x,MX,PHc-84,R-MX,1.5,1);x.fill();
+  tx(x,"إدارة: الشيخ. محمد عبدالكريم الأسطل",R,PHc-58,{s:13,w:700,c:DK});
+    x.fillStyle="#e4f1f3";rr(x,MX,PHc-72,86,28,14);x.fill();
+  tx(x,"صفحة "+n+" من "+total,MX+43,PHc-58,{s:12.5,w:700,c:DT,a:"center"});
+  x.fillStyle=dGrad(x,0,PWc);x.fillRect(0,PHc-8,PWc,8);
+}
+function dSec(x,t,y){x.fillStyle=DM;x.beginPath();x.arc(R-6,y,6,0,7);x.fill();tx(x,t,R-22,y,{s:15,w:700,c:DK})}
+function dKpis(x,y,items){
+  const w=(R-MX-36)/4;
+  items.forEach((it,i)=>{
+    const X=R-(i+1)*w-i*12;
+    dCard(x,X,y,w,84,18,it.p);
+    x.fillStyle=it.c;x.beginPath();x.arc(X+w-20,y+20,5,0,7);x.fill();
+    tx(x,it.v,X+w/2,y+40,{s:28,w:700,c:DK,a:"center"});
+    tx(x,it.l,X+w/2,y+66,{s:12,w:600,c:DS,a:"center",m:w-8});
+  });
+}
+function dTable(pages,cur,yy,cols,heads,rows,title,mg){
+  mg=mg||[];const RH=38,LIM=PHc-104;
+  const cell=(x,t,X,c,y,o)=>{if(c.a==="c")tx(x,t,X-c.w/2,y,{...o,a:"center",m:c.w-10});else tx(x,t,X-12,y,{...o,m:c.w-22})};
+  const hdr=()=>{const x=cur.x;x.fillStyle="#e4f1f3";rr(x,MX,yy,R-MX,34,17);x.fill();let X=R;cols.forEach((c,i)=>{cell(x,heads[i],X,c,yy+17,{c:DT,w:700,s:12.5});X-=c.w});yy+=42};
+  dSec(cur.x,title,yy+9);yy+=30;hdr();
+  const G=[];rows.forEach(r=>{const l=G[G.length-1];if(l&&l.g===r.g)l.rs.push(r);else G.push({g:r.g,rs:[r]})});
+  G.forEach((gr,gi)=>{
+    const h=gr.rs.length*RH;
+    if(yy+h>LIM){cur=Pg();pages.push(cur);dMini(cur.x);yy=64;dSec(cur.x,title,yy+9);yy+=30;hdr()}
+    const x=cur.x;
+    if(gr.rs[0].z){x.fillStyle="#f6fbfa";rr(x,MX,yy+2,R-MX,h-4,12);x.fill()}
+    gr.rs.forEach((r,k)=>{
+      const y=yy+k*RH;let X=R;
+      r.c.forEach((t,i)=>{const c=cols[i];
+        if(mg.includes(i)){if(k===0){
+          if(i===1){tx(x,String(t),X-12,yy+h/2,{s:13.5,w:700,c:DK,m:c.w-22})}
+          else cell(x,t,X,c,yy+h/2,{s:13,c:DS})}}
+        else if(t&&t.pill!==undefined){x.fillStyle=GP[t.pill];rr(x,X-c.w/2-38,y+8,76,22,11);x.fill();x.fillStyle=GC[t.pill];x.beginPath();x.arc(X-c.w/2+24,y+19,3.5,0,7);x.fill();tx(x,t.t,X-c.w/2-4,y+19,{s:12,w:700,c:DK,a:"center"})}
+        else cell(x,t,X,c,y+19,{s:13,c:DK});
+        X-=c.w});
+      if(k<gr.rs.length-1){let X2=R;x.fillStyle=DL;cols.forEach((c,i)=>{if(!mg.includes(i))x.fillRect(X2-c.w+10,y+RH-0.5,c.w-20,1);X2-=c.w})}
+    });
+    yy+=h;
+  });
+}
 function printDay(){
   const s=cur();if(!s||!s.entries.length){toast("لا توجد بيانات للطباعة");return}
   try{
-    
-    const pages=[],p=Pg(),x=p.x;pages.push(p);head(x);
+    const pages=[],p=Pg(),x=p.x;pages.push(p);dHead(x);
     const gc=[0,0,0,0];s.entries.forEach(e=>e.parts.forEach(pp=>gc[GRADES.indexOf(pp.grade)]++));
-    tx(x,"سجل التسميع اليومي",R,178,{s:12,c:"#5a6b72"});tx(x,sName(s),R,206,{s:24,w:700,c:"#071B2B",m:500});
-    tx(x,"عدد الطلاب",MX,178,{s:12,c:"#5a6b72",a:"left"});tx(x,s.entries.length,MX,206,{s:24,w:700,a:"left"});
-    kpis(x,238,GRADES.map((g,k)=>({v:gc[k],l:g,c:GC[k]})));
-    const rows=[];s.entries.forEach((e,i)=>e.parts.forEach((pp,j)=>rows.push({g:e.id,z:i%2===1,c:[String(i+1),e.student,pp.surah,vl(pp),{pill:GRADES.indexOf(pp.grade),t:pp.grade}]})));
-    drawTable(pages,p,346,[{w:44,a:"c"},{w:210,a:"r"},{w:150,a:"r"},{w:180,a:"r"},{w:138,a:"c"}],["م","الطالب","السورة","الآيات","التقدير"],rows,"سجل الطلاب",[0,1]);
-    finalize(pages);
+    dCard(x,MX,186,R-MX,76,20);
+    tx(x,"سجل التسميع اليومي",R-24,208,{s:12,w:600,c:DS});tx(x,sName(s),R-24,238,{s:22,w:700,c:DK,m:470});
+    x.fillStyle="#e4f1f3";rr(x,MX+16,198,128,52,16);x.fill();
+    tx(x,"عدد الطلاب",MX+80,213,{s:11.5,w:600,c:DT,a:"center"});tx(x,s.entries.length,MX+80,236,{s:22,w:700,c:DK,a:"center"});
+    const PS=["#e6f7ee","#e5f3fa","#fdf3d9","#fbe5e2"];
+    dKpis(x,284,GRADES.map((g,k)=>({v:gc[k],l:g,c:GC[k],p:PS[k]})));
+    const tot=gc.reduce((a,b)=>a+b,0)||1;
+    x.save();rr(x,MX,396,R-MX,12,6);x.clip();let bx=R;gc.forEach((n,k)=>{const w=(R-MX)*n/tot;if(w>0){x.fillStyle=GC[k];x.fillRect(bx-w,396,w,12);bx-=w}});x.restore();
+    const rows=[];s.entries.forEach((e,i)=>e.parts.forEach(pp=>rows.push({g:e.id,z:i%2===1,av:i,c:[String(i+1),e.student,pp.surah,vl(pp),{pill:GRADES.indexOf(pp.grade),t:pp.grade}]})));
+    dTable(pages,p,426,[{w:44,a:"c"},{w:210,a:"r"},{w:150,a:"r"},{w:180,a:"r"},{w:138,a:"c"}],["م","الطالب","السورة","الآيات","التقدير"],rows,"سجل الطلاب",[0,1]);
+    pages.forEach((q,i)=>dFoot(q.x,i+1,pages.length));
     deliver(toPDF(pages.map(q=>q.c)),"تسميع - "+sName(s));
   }catch(e){toast("تعذّر إنشاء الملف")}
 }
